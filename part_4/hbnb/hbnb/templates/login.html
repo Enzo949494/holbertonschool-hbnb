@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="../static/styles.css"> <!-- <- chemin relatif au HTML dans templates -->
+</head>
+<body>
+    <header>
+        <img src="../images/logo.png" alt="App Logo" class="logo"> <!-- <- idem ici -->
+        <nav>
+            <a href="index.html">Home</a>
+            <a href="login.html" class="login-button">Login</a>
+        </nav>
+    </header>
+
+    <main>
+        <form id="login-form" action="/login" method="POST">
+            <h2>Login</h2>
+
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+
+            <button type="submit">Login</button>
+        </form>
+    </main>
+
+    <footer>
+        <p>© 2025 - All rights reserved</p>
+    </footer>
+
+    <script src="../static/scripts.js"></script> <!-- <- chemin JS ajusté -->
+</body>
+</html>

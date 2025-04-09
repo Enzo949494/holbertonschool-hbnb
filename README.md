@@ -1,2 +1,1 @@
-# holbertonschool-hbnb
-hbnb project with Jayson Pasquier and Ardonit Miuslu
+hbnb etape 1 fix bug
