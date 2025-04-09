@@ -64,3 +64,38 @@ class ReviewRepository:
 
         db.session.delete(review)
         db.session.commit()
+
+    def find_by_user_and_place(self, user_id, place_id):
+        """
+        Trouve un avis (Review) par user_id et place_id.
+        
+        Args:
+            user_id: ID de l'utilisateur
+            place_id: ID du lieu
+            
+        Returns:
+            Review: L'avis trouvé ou None si aucun avis n'est trouvé
+        """
+        return db.session.query(self.model).filter_by(
+            user_id=user_id, 
+            place_id=place_id
+        ).first()
+        
+    def get_all(self):
+        """
+        Récupère tous les avis.
+        
+        Returns:
+            list: Liste de tous les avis
+        """
+        return db.session.query(self.model).all()
+
+    def get_by_place_id(self, place_id):
+        """
+        Récupère tous les avis pour un lieu donné directement via SQL
+        """
+        reviews = db.session.query(self.model).filter(self.model.place_id == place_id).all()
+        print(f"Direct query for place_id={place_id} returned {len(reviews)} reviews")
+        for r in reviews:
+            print(f"Found: Review ID={r.id}, place_id={r.place_id}, user_id={r.user_id}")
+        return reviews

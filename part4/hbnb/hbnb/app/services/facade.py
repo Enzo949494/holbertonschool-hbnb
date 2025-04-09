@@ -182,11 +182,45 @@ class HBnBFacade:
                     if amenity:
                         place.add_amenity(amenity)
 
+            # AJOUT CRUCIAL : Commit les changements dans la base de données
+            from app import db
+            db.session.commit()
+            
             logger.debug(f"Successfully updated place {place_id}")
             return place
 
         except Exception as e:
+            # AJOUT : Rollback en cas d'erreur
+            from app import db
+            db.session.rollback()
+            
             logger.error(f"Error updating place: {str(e)}")
+            raise ValueError(str(e))
+
+    def delete_place(self, place_id):
+        """Delete a place by ID"""
+        try:
+            # Vérifier si la place existe
+            place = self.place_repo.get(place_id)
+            if not place:
+                logger.error(f"Place with ID {place_id} not found")
+                return False
+            
+            # Supprimer la place
+            self.place_repo.delete(place_id)
+            
+            # Commit les changements
+            from app import db
+            db.session.commit()
+            
+            logger.debug(f"Successfully deleted place {place_id}")
+            return True
+            
+        except Exception as e:
+            from app import db
+            db.session.rollback()
+            
+            logger.error(f"Error deleting place: {str(e)}")
             raise ValueError(str(e))
 
     def create_review(self, review_data):
@@ -217,7 +251,17 @@ class HBnBFacade:
         place = self.get_place(place_id)
         if not place:
             raise ValueError("Place not found")
-        return [review for review in self.review_repo.get_all() if review.place.id == place_id]
+        
+        # Filtrer manuellement puisque la méthode n'existe pas dans SQLAlchemyRepository
+        all_reviews = self.review_repo.get_all()
+        filtered_reviews = [review for review in all_reviews if str(review.place_id) == str(place_id)]
+        
+        # Ajouter des logs pour le débogage
+        print(f"Found {len(filtered_reviews)} reviews for place_id {place_id}")
+        for review in filtered_reviews:
+            print(f"Review {review.id}: text={review.text}, rating={review.rating}")
+        
+        return filtered_reviews
 
     def update_review(self, review_id, review_data):
         review = self.review_repo.get(review_id)
@@ -233,6 +277,23 @@ class HBnBFacade:
         if review:
             self.review_repo.delete(review_id)
             return True
+        return False
+        
+    def has_already_reviewed(self, user_id, place_id):
+        """
+        Check if a user has already reviewed a specific place
+        
+        Args:
+            user_id: ID of the user
+            place_id: ID of the place
+        
+        Returns:
+            bool: True if the user has already reviewed the place, False otherwise
+        """
+        reviews = self.get_reviews_by_place(place_id)
+        for review in reviews:
+            if review.user.id == user_id:
+                return True
         return False
 
     def is_valid_email(self, email):

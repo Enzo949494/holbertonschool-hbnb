@@ -1,6 +1,7 @@
 from flask_restx import Namespace, Resource, fields
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
-from app.api.v1 import facade  # Import the shared facade instance
+from app.services.facade import HBnBFacade  # Import the shared facade instance
+facade = HBnBFacade()  # Créez une nouvelle instance
 
 api = Namespace('users', description='User operations')
 
@@ -19,10 +20,15 @@ user_update_model = api.model('UserUpdate', {
 })
 
 
-# Helper function to check admin privileges
+# Modifiez la fonction is_admin_user pour gérer les exceptions
 def is_admin_user():
-    claims = get_jwt()  # Retrieve the JWT claims
-    return claims.get('is_admin', False)
+    try:
+        # La nouvelle façon de vérifier si l'utilisateur est admin
+        claims = get_jwt()  # Récupérer tous les claims
+        return bool(claims.get('is_admin', False))  # Vérifier le claim is_admin
+    except Exception as e:
+        print(f"Erreur lors de la vérification admin: {e}")
+        return False
 
 
 @api.route('/')
@@ -43,18 +49,27 @@ class UserList(Resource):
     @api.response(403, 'Admin privileges required')
     def post(self):
         """Register a new user (Admin only)"""
-        if not is_admin_user():
-            return {'error': 'Admin privileges required'}, 403
-
-        from app import bcrypt  # Import différé pour éviter les imports circulaires
-        user_data = api.payload
-
-        # Check if email is already in use
-        existing_user = facade.get_user_by_email(user_data['email'])
-        if existing_user:
-            return {'error': 'Email already registered'}, 400
-
         try:
+            # Débogage des claims JWT
+            claims = get_jwt()
+            print(f"DEBUG - JWT claims: {claims}")
+            
+            # Utiliser la fonction is_admin_user existante
+            admin_status = is_admin_user()
+            print(f"DEBUG - Admin status: {admin_status}")
+            
+            if not admin_status:
+                return {'error': 'Admin privileges required'}, 403
+
+            from app import bcrypt  # Import différé pour éviter les imports circulaires
+            user_data = api.payload
+            print(f"DEBUG - User data: {user_data}")
+
+            # Check if email is already in use
+            existing_user = facade.get_user_by_email(user_data['email'])
+            if existing_user:
+                return {'error': 'Email already registered'}, 400
+
             # Hash the password before storing it
             hashed_password = bcrypt.generate_password_hash(user_data['password']).decode('utf-8')
             user_data['password'] = hashed_password
@@ -64,8 +79,17 @@ class UserList(Resource):
 
             # Return only the user's ID and a success message (exclude password)
             return {'id': new_user.id, 'message': 'User successfully created'}, 201
-        except ValueError as e:
-            return {'error': str(e)}, 400
+        except Exception as e:
+            # Afficher plus d'informations sur l'erreur
+            import traceback
+            print(f"DEBUG - Exception dans post: {e}")
+            traceback.print_exc()
+            
+            # Puis continuer avec la gestion d'erreur existante
+            if isinstance(e, ValueError):
+                return {'error': str(e)}, 400
+            else:
+                return {'error': f"Unexpected error: {str(e)}"}, 500
 
 
 @api.route('/<id>')
@@ -92,11 +116,11 @@ class UserResource(Resource):
     @api.response(403, "Unauthorized action")
     def put(self, id):
         """Update user details"""
-        current_user = get_jwt_identity()  # Get the authenticated user's identity
+        current_user_id = get_jwt_identity()  # Maintenant c'est juste l'ID comme chaîne
         is_admin = is_admin_user()
 
-        # Check if the authenticated user is trying to modify their own details or is an admin
-        if not is_admin and str(current_user['id']) != id:
+        # Modifiez cette condition :
+        if not is_admin and str(current_user_id) != id:
             return {'error': "Unauthorized action"}, 403
 
         from app import bcrypt  # Import différé pour éviter les imports circulaires

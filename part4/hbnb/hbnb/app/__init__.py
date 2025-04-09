@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_restx import Api
+from flask_cors import CORS  # Ajoutez cette importation en haut du fichier avec les autres importations
 from app.persistence.repository import SQLAlchemyRepository  # Import the new repository class
 from app.extensions import db, bcrypt, jwt  # Use extensions for database and authentication
 from app.api.v1.users import api as users_ns
@@ -13,6 +14,15 @@ from app.api.v1.protector import api as protected_ns
 def create_app(config_class="config.DevelopmentConfig"):
     """Create and configure the Flask application"""
     app = Flask(__name__)
+    
+    # Configuration CORS explicite pour l'authentification
+    CORS(app, resources={
+        r"/api/*": {
+            "origins": "*",  # Ou spécifiez votre origine frontend
+            "methods": ["GET", "POST", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"]
+        }
+    })
     
     # Load the configuration
     app.config.from_object(config_class)
@@ -31,11 +41,20 @@ def create_app(config_class="config.DevelopmentConfig"):
 
     # Initialize Flask-RESTX API
     api = Api(
-        app, 
-        version='1.0', 
-        title='HBnB API', 
-        description='HBnB Application API', 
-        doc='/api/v1/'
+        app,
+        version='1.0',
+        title='HBNB API',
+        description='HBNB Application API',
+        doc='/api/v1/',
+        authorizations={
+            'Bearer': {
+                'type': 'apiKey',
+                'in': 'header',
+                'name': 'Authorization',
+                'description': "Type in the *'Value'* input box below: **'Bearer &lt;JWT&gt;'**, where JWT is the token"
+            }
+        },
+        security='Bearer'
     )
 
     # Register the namespaces (already present in your code)
@@ -48,7 +67,5 @@ def create_app(config_class="config.DevelopmentConfig"):
 
     # Initialize JWT again (already present in your code)
     jwt.init_app(app)
-
-
 
     return app

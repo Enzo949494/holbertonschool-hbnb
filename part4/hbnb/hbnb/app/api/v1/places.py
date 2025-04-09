@@ -30,19 +30,29 @@ place_update_model = api.model('PlaceUpdate', {
 
 @api.route('/')
 class PlaceList(Resource):
-    @jwt_required()  # Require authentication to create a new place
-    @api.expect(place_model)
-    @api.response(201, 'Place successfully created')
-    @api.response(400, 'Invalid input data')
+    @api.expect(place_model, validate=True)
+    @jwt_required()
     def post(self):
-        """Register a new place"""
-        current_user = get_jwt_identity()  # Get the authenticated user's identity
         place_data = api.payload
-
+        
+        # Récupérer l'ID de l'utilisateur actuel et vérifier s'il est admin
+        current_user_id = get_jwt_identity()
+        claims = get_jwt()
+        is_admin = claims.get('is_admin', False)
+        
+        # Si un owner_id est fourni et que l'utilisateur est admin, utiliser cet ID
+        # Sinon, utiliser l'ID de l'utilisateur authentifié
+        if 'owner_id' in place_data and is_admin:
+            # Vérifier que l'utilisateur existe
+            owner = facade.get_user(place_data['owner_id'])
+            if not owner:
+                return {'error': f"User with ID {place_data['owner_id']} not found"}, 400
+            # Garder l'owner_id fourni (pour les admins)
+        else:
+            # Pour les non-admins ou si aucun owner_id n'est fourni, utiliser l'ID de l'utilisateur authentifié
+            place_data['owner_id'] = current_user_id
+        
         try:
-            # Set the owner_id to the authenticated user's ID
-            place_data['owner_id'] = current_user['id']
-
             # Create place using the facade
             new_place = facade.create_place(place_data)
 
@@ -103,7 +113,7 @@ class PlaceResource(Resource):
     @api.response(400, "Invalid input data")
     def put(self, place_id):
         """Update a place's information (Admins can bypass ownership restrictions)"""
-        current_user = get_jwt_identity()  # Get the authenticated user's identity
+        current_user_id = get_jwt_identity()  # Maintenant c'est directement l'ID
         claims = get_jwt()  # Retrieve all JWT claims
         is_admin = claims.get('is_admin', False)  # Check if user is admin
 
@@ -114,7 +124,7 @@ class PlaceResource(Resource):
                 return {'error': "Place not found"}, 404
             
             # Ownership check: Admins can bypass this restriction
-            if not is_admin and str(place.owner.id) != current_user['id']:
+            if not is_admin and str(place.owner.id) != current_user_id:  # Utilisez directement l'ID
                 return {'error': "Unauthorized action"}, 403
 
             update_data = api.payload
@@ -147,7 +157,7 @@ class PlaceResource(Resource):
     @api.response(403, "Unauthorized action")
     def delete(self, place_id):
         """Delete a place (Admins can bypass ownership restrictions)"""
-        current_user = get_jwt_identity()  # Get the authenticated user's identity
+        current_user_id = get_jwt_identity()  # Maintenant c'est directement l'ID
         claims = get_jwt()  # Retrieve all JWT claims
         is_admin = claims.get('is_admin', False)  # Check if user is admin
 
@@ -158,7 +168,7 @@ class PlaceResource(Resource):
                 return {'error': "Place not found"}, 404
             
             # Ownership check: Admins can bypass this restriction
-            if not is_admin and str(place.owner.id) != current_user['id']:
+            if not is_admin and str(place.owner.id) != current_user_id:  # Utilisez directement l'ID
                 return {'error': "Unauthorized action"}, 403
 
             logger.debug(f"Deleting place {place_id}")

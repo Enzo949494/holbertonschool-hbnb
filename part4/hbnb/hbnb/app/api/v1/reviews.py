@@ -27,21 +27,21 @@ class ReviewList(Resource):
     @api.response(403, "You cannot review your own place")
     def post(self):
         """Register a new review"""
-        current_user = get_jwt_identity()  # Get the authenticated user's identity
+        current_user_id = get_jwt_identity()  # Maintenant c'est directement l'ID
         review_data = api.payload
 
         try:
             # Validate that the user is not reviewing their own place
             place = facade.get_place(review_data['place_id'])
-            if place.owner.id == current_user['id']:
+            if str(place.owner.id) == current_user_id:  # Comparaison directe avec l'ID
                 return {'error': "You cannot review your own place"}, 403
 
             # Validate that the user has not already reviewed this place
-            if facade.has_already_reviewed(current_user['id'], review_data['place_id']):
+            if facade.has_already_reviewed(current_user_id, review_data['place_id']):  # Passage direct de l'ID
                 return {'error': "You have already reviewed this place"}, 400
 
             # Add the user_id to the review data
-            review_data['user_id'] = current_user['id']
+            review_data['user_id'] = current_user_id  # Assignation directe de l'ID
 
             # Create the review using the facade
             new_review = facade.create_review(review_data)
@@ -89,7 +89,7 @@ class ReviewResource(Resource):
     @api.response(403, "Unauthorized action")
     def put(self, review_id):
         """Update a review's information"""
-        current_user = get_jwt_identity()  # Get the authenticated user's identity
+        current_user_id = get_jwt_identity()  # Maintenant c'est directement l'ID
         try:
             # Retrieve the existing review
             review = facade.get_review(review_id)
@@ -97,7 +97,7 @@ class ReviewResource(Resource):
                 return {'error': "Review not found"}, 404
 
             # Check if the current user is the creator of the review
-            if str(review.user.id) != current_user['id']:
+            if str(review.user.id) != current_user_id:  # Comparaison directe avec l'ID
                 return {'error': "Unauthorized action"}, 403
 
             update_data = api.payload
@@ -115,13 +115,13 @@ class ReviewResource(Resource):
         except ValueError as e:
             return {'error': str(e)}, 400
 
-    @jwt_required()  # Require authentication to delete a review
+    @jwt_required()
     @api.response(200, 'Review deleted successfully')
     @api.response(404, 'Review not found')
     @api.response(403, "Unauthorized action")
     def delete(self, review_id):
         """Delete a review"""
-        current_user = get_jwt_identity()  # Get the authenticated user's identity
+        current_user_id = get_jwt_identity()  # Maintenant c'est directement l'ID
         try:
             # Retrieve the existing review
             review = facade.get_review(review_id)
@@ -129,7 +129,7 @@ class ReviewResource(Resource):
                 return {'error': "Review not found"}, 404
 
             # Check if the current user is the creator of the review
-            if str(review.user.id) != current_user['id']:
+            if str(review.user.id) != current_user_id:  # Comparaison directe avec l'ID
                 return {'error': "Unauthorized action"}, 403
 
             # Delete the review using the facade

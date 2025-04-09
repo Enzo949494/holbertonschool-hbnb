@@ -55,3 +55,11 @@ class UserRepository:
         
         db.session.delete(user)
         db.session.commit()
+
+    def get_all(self):
+        """Get all users from the database"""
+        return db.session.query(User).all()
+
+    def get(self, id):
+        """Alias pour get_by_id pour maintenir la cohérence avec les autres repositories"""
+        return self.get_by_id(id)
