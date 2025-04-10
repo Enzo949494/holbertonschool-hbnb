@@ -16,14 +16,27 @@
         <nav>
             <ul>
                 <li><a href="index.html">Home</a></li>
-                <li><a href="/html/login.html" class="login-button">Login</a></li>
+                <li><a href="/html/login.html" class="login-button" id="login-link">Login</a></li>
             </ul>
         </nav>
     </header>
 
     <main>
         <h1>Places to Stay</h1>
-        <section class="places-container">
+        
+        <!-- Price Filter Section -->
+        <section id="filter">
+            <label for="price-filter">Max Price:</label>
+            <select id="price-filter">
+                <option value="10">$10</option>
+                <option value="50">$50</option>
+                <option value="100">$100</option>
+                <option value="all" selected>All</option>
+            </select>
+            <button id="apply-filter" type="button">Apply Filter</button>
+        </section>
+        
+        <section class="places-container" id="places-list">
             <!-- Place Card 1 -->
             <article class="place-card">
                 <img src="../images/place1.jpg" alt="Cozy Apartment">
@@ -60,5 +73,7 @@
     <footer>
         <p>&copy; 2025 HBNB - All rights reserved</p>
     </footer>
+    
+    <script src="../scripts/scripts.js"></script>
 </body>
 </html>

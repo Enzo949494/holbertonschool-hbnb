@@ -10,12 +10,23 @@
     font-family: Arial, sans-serif;
 }
 
+/* First, update the html and body styles */
+html {
+    height: 100%;
+    position: relative;
+}
+
 body {
     background-color: #f4f4f4;
     color: #333;
+    min-height: 100vh; /* Modification clé (remplace height) */
+    display: flex; /* Flexbox activé */
+    flex-direction: column; /* Organisation verticale */
+    margin: 0;
+    padding: 0;
 }
 
-/* Header Styles */
+/* Header Styles (inchangé) */
 header {
     background-color: #333;
     color: #fff;
@@ -25,12 +36,11 @@ header {
     align-items: center;
 }
 
-/* Logo class as required */
 .logo {
     height: 50px;
 }
 
-/* Navigation */
+/* Navigation (inchangé) */
 nav ul {
     display: flex;
     list-style: none;
@@ -46,7 +56,6 @@ nav a {
     margin-left: 1rem;
 }
 
-/* Login button class as required */
 .login-button {
     padding: 8px 15px;
     background-color: #4CAF50;
@@ -55,28 +64,33 @@ nav a {
     text-decoration: none;
 }
 
-/* Main Content */
+/* Main Content - Modification cruciale */
 main {
     padding: 2rem;
     max-width: 1200px;
     margin: 0 auto;
+    width: 100%;
+    flex: 1 0 auto; /* Nouvelle valeur flex (croissance obligatoire) */
 }
 
-/* Footer Styles */
+/* Footer Styles - Modifications ciblées */
 footer {
     background-color: #333;
     color: white;
     text-align: center;
     padding: 1rem 0;
-    margin-top: 20px;
+    width: 100%; /* Garantit la largeur totale */
+    margin-top: auto; /* Pousse en bas */
+    flex-shrink: 0; /* Empêche le rétrécissement */
+    position: static; /* Annule tout positionnement absolu/fixed */
 }
 
-/* Place Cards with fixed parameters */
+/* Tout le reste de votre CSS reste inchangé */
 .place-card {
     background-color: white;
-    border-radius: 10px; /* Required */
-    margin: 20px 0; /* Required */
-    border: 1px solid #ddd; /* Required */
+    border-radius: 10px;
+    margin: 20px 0;
+    border: 1px solid #ddd;
     overflow: hidden;
 }
 
@@ -87,7 +101,7 @@ footer {
 }
 
 .place-info {
-    padding: 10px; /* Required padding */
+    padding: 10px;
 }
 
 .price {
@@ -96,7 +110,6 @@ footer {
     margin: 10px 0;
 }
 
-/* Details button */
 .details-button {
     display: inline-block;
     padding: 10px 15px;
@@ -108,14 +121,12 @@ footer {
     width: 100%;
 }
 
-/* Places Container */
 .places-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 30px;
 }
 
-/* Place Details */
 .place-details {
     background-color: white;
     border-radius: 10px;
@@ -123,16 +134,14 @@ footer {
     overflow: hidden;
 }
 
-/* Review Cards with fixed parameters */
 .review-card {
     background-color: white;
-    border-radius: 10px; /* Required */
-    padding: 10px; /* Required */
-    margin: 20px 0; /* Required */
-    border: 1px solid #ddd; /* Required */
+    border-radius: 10px;
+    padding: 10px;
+    margin: 20px 0;
+    border: 1px solid #ddd;
 }
 
-/* Add Review Form */
 .add-review {
     max-width: 700px;
     margin: 0 auto;
@@ -141,7 +150,6 @@ footer {
     border-radius: 10px;
 }
 
-/* Form styling */
 .form {
     width: 100%;
 }
@@ -185,7 +193,6 @@ footer {
     color: #333;
 }
 
-/* Login Form */
 .login-container {
     max-width: 500px;
     margin: 50px auto;
@@ -211,7 +218,6 @@ footer {
     background-color: #ff3a3f;
 }
 
-/* Responsive styling */
 @media (max-width: 768px) {
     .places-container {
         grid-template-columns: 1fr;
