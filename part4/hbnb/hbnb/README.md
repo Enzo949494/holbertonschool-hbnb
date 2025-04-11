@@ -1,175 +1,252 @@
-# 🏠 HBNB - Holberton BnB
+# 🏠 HBNB - Holberton BnB (Part 4)
 
 ## 🎯 Project Overview
-RESTful API for a Bed and Breakfast service built with Flask, implementing clean architecture patterns.
+A full-stack Bed and Breakfast service with a RESTful API built with Flask and a dynamic frontend. This project implements Clean Architecture patterns and features user authentication, place listings, reviews, and amenities.
 
 ## 📁 Project Structure
-```bash
-part2/
-├── app/
-│   ├── api/v1/          # API endpoints
-│   │   ├── users.py
-│   │   ├── places.py
-│   │   ├── reviews.py
-│   │   └── amenities.py
-│   ├── models/          # Business logic
-│   │   ├── base_model.py
-│   │   ├── user.py
-│   │   ├── place.py
-│   │   ├── review.py
-│   │   └── amenity.py
-│   ├── services/        # Facade pattern
-│   └── persistence/     # Repository pattern
-├── run.py              
-└── requirements.txt    
-```
+````
+part4/hbnb/
+├── hbnb/
+│   ├── app/
+│   │   ├── api/v1/          # API endpoints
+│   │   ├── models/          # Business logic
+│   │   ├── services/        # Facade pattern
+│   │   └── persistence/     # Repository pattern
+│   ├── base_files/          # Frontend files
+│   │   ├── html/
+│   │   ├── styles/
+│   │   └── scripts/
+│   └── run.py               # Application entry point
+└── requirements.txt
+````
 
 ## 🚀 Installation & Setup
-```bash
-python3 -m venv venv
-source venv/bin/activate
+
+### Backend Setup
+# Create and activate virtual environment
+````
+python3 -m venv venv_part4
+source venv_part4/bin/activate
+````
+
+# Install dependencies
+````
 pip install -r requirements.txt
-```
+````
 
-## 🧩 Core Components
+# Run the application
+````
+python run.py
+````
+  # Server starts at http://localhost:5000
 
-### 1. 🔷 Base Model
-```python
-class BaseModel:
-    def __init__(self):
-        self.id = str(uuid.uuid4())
-        self.created_at = datetime.now()
-        self.updated_at = datetime.now()
-```
+### Frontend Setup
+# Serve the frontend files using any HTTP server
+# Example with Python's built-in server:
+````
+cd part4/hbnb/hbnb/base_files
+python -m http.server 8080
+```` 
+ # Frontend accessible at http://localhost:8080/html/index
 
-### 2. 📦 Core Models
-- **User**
-  - Attributes: first_name, last_name, email, is_admin
-  - Validation: names ≤ 50 chars, unique email
+## 🧩 Core Features
 
-- **Place**
-  - Attributes: title, description, price, latitude, longitude
-  - Validation: title ≤ 100 chars, price > 0
-  - Relationships: belongs to User, has many Reviews, many Amenities
+### 1. 🔐 User Authentication
+- JWT-based authentication system
+- Login/Logout functionality
+- Protected routes requiring authentication
 
-- **Review**
-  - Attributes: text, rating (1-5), user_id, place_id
-  - Relationships: belongs to User and Place
+### 2. 📦 Place Listings
+- Browse available places
+- Filter places by price
+- View detailed place information
+- Create new place listings (authenticated users)
 
-- **Amenity**
-  - Attributes: name (≤ 50 chars)
-  - Relationships: many-to-many with Place
+### 3. ⭐ Reviews System
+- Submit reviews with ratings (1-5 stars)
+- View reviews for each place
+- Validation to prevent users from reviewing their own places
+- Limitation of one review per user per place
 
-### 3. 🎭 Facade Pattern
-```python
-class HBnBFacade:
-    def __init__(self):
-        self.user_repo = InMemoryRepository()
-        self.place_repo = InMemoryRepository()
-        self.review_repo = InMemoryRepository()
-        self.amenity_repo = InMemoryRepository()
+### 4. 🧰 Amenities Management
+- Associate amenities with places
+- Filter places by amenities
 
-    # Example methods
-    def create_user(self, user_data):
-        user = User(**user_data)
-        self.user_repo.add(user)
-        return user
+## 🔌 API Endpoints
 
-    def get_place_with_details(self, place_id):
-        place = self.place_repo.get(place_id)
-        if place:
-            place.owner = self.user_repo.get(place.owner_id)
-            place.reviews = self.review_repo.get_by_place(place_id)
-        return place
-```
+### 🔑 Authentication
+POST /api/v1/auth/login
+- Login and receive JWT token
+- Body: { "email": "user@example.com", "password": "password" }
 
-## 🔌 API Endpoints & Examples
+POST /api/v1/auth/register
+- Register new user
+- Body: { "email": "user@example.com", "password": "password", "first_name": "John", "last_name": "Doe" }
 
 ### 👥 User Management
-```bash
-# Create User
-POST /api/v1/users/
-{
-    "first_name": "John",
-    "last_name": "Doe",
-    "email": "john@example.com"
-}
+GET /api/v1/users
+- Get all users (admin only)
 
-# Response
-{
-    "id": "uuid",
-    "first_name": "John",
-    "last_name": "Doe",
-    "email": "john@example.com"
-}
-```
+GET /api/v1/users/<user_id>
+- Get specific user details
+
+PUT /api/v1/users/<user_id>
+- Update user (authenticated user can only update their own profile)
+- Body: { "first_name": "Updated", "last_name": "Name" }
 
 ### 🏡 Place Management
-```bash
-# Create Place
-POST /api/v1/places/
-{
-    "title": "Cozy Apartment",
+GET /api/v1/places
+- Get all places
+- Query params: price_max, amenity_ids[]
+
+GET /api/v1/places/<place_id>
+- Get specific place details
+
+POST /api/v1/places
+- Create new place (authenticated)
+- Body: {
+    "name": "Cozy Apartment",
     "description": "Nice stay",
     "price": 100.0,
-    "latitude": 37.7749,
-    "longitude": -122.4194,
-    "owner_id": "user_uuid",
-    "amenities": ["amenity_uuid"]
-}
+    "location": "Paris, France",
+    "amenity_ids": ["amenity_uuid1", "amenity_uuid2"]
+  }
 
-# Get Place Details
-GET /api/v1/places/<place_id>
-Response includes: owner details, amenities, reviews
-```
+PUT /api/v1/places/<place_id>
+- Update place (owner only)
 
 ### ⭐ Review Management
-```bash
-# Create Review
-POST /api/v1/reviews/
-{
+GET /api/v1/reviews?place_id=<place_id>
+- Get reviews for a specific place
+
+POST /api/v1/reviews
+- Create new review (authenticated)
+- Body: {
     "text": "Great place!",
     "rating": 5,
-    "user_id": "user_uuid",
     "place_id": "place_uuid"
-}
-
-# Get Place Reviews
-GET /api/v1/places/<place_id>/reviews
-```
+  }
 
 ### 🛋️ Amenity Management
-```bash
-# Create Amenity
-POST /api/v1/amenities/
-{
-    "name": "Wi-Fi"
+GET /api/v1/amenities
+- Get all available amenities
+
+POST /api/v1/amenities
+- Create new amenity (admin only)
+- Body: { "name": "Wi-Fi" }
+
+## 📱 Frontend Pages
+
+### Login/Register Pages
+- User authentication forms
+- JWT token storage in cookies
+
+### Home Page
+- Browse all available places
+- Filter by price
+- Click on places to see details
+
+### Place Details Page
+- View comprehensive place information
+- See all reviews with ratings
+- Submit your own review (if authenticated)
+
+### User Profile Page
+- View and edit your profile information
+- See places you've listed
+- Manage your reviews
+
+## 🖥️ API Usage Example
+
+### Authentication and Getting Places
+// Login
+async function login() {
+  const response = await fetch('http://localhost:5000/api/v1/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: "user@example.com", password: "password" })
+  });
+  
+  const data = await response.json();
+  const token = data.access_token;
+  
+  // Store token in cookie
+  document.cookie = `token=${token}; path=/; max-age=86400`;
 }
 
-# Get All Amenities
-GET /api/v1/amenities/
-```
+// Fetch places
+async function getPlaces() {
+  const token = getCookie('token');
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  const response = await fetch('http://localhost:5000/api/v1/places', {
+    method: 'GET',
+    headers: headers
+  });
+  
+  return await response.json();
+}
+
+### Submitting a Review
+````
+async function submitReview(placeId, text, rating) {
+  const token = getCookie('token');
+  
+  if (!token) {
+    alert('You must be logged in to submit a review');
+    return;
+  }
+  
+  try {
+    const response = await fetch('http://localhost:5000/api/v1/reviews', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        text: text,
+        rating: rating,
+        place_id: placeId
+      })
+    });
+    
+    if (response.ok) {
+      alert('Review submitted successfully!');
+    } else {
+      const data = await response.json();
+      alert(`Error: ${data.error || response.statusText}`);
+    }
+  } catch (error) {
+    console.error('Error submitting review:', error);
+  }
+}
+````
 
 ## 📊 Status Codes & Responses
-- 201: Resource Created
-- 200: Success
-- 404: Not Found
-- 400: Bad Request
 
-### 📝 Common Response Format
-```json
-{
-    "id": "uuid",
-    "created_at": "timestamp",
-    "updated_at": "timestamp",
-    ...resource specific fields...
-}
-```
+- 200: Success (GET, PUT)
+- 201: Resource Created (POST)
+- 400: Bad Request (validation errors)
+- 401: Unauthorized (missing or invalid token)
+- 403: Forbidden (insufficient permissions)
+- 404: Resource Not Found
 
-## 🏃‍♂️ Running the Application
-```bash
-python run.py  # Server starts at http://localhost:5000
-```
+## 🔒 Security Features
+
+- JWT-based authentication
+- Password hashing with bcrypt
+- CORS configuration for secure cross-origin requests
+- Authorization checks for protected operations
 
 ---
-## 🌟 **Summary**: This project implements a comprehensive REST API for a BnB platform using Flask, featuring clean architecture with Facade and Repository patterns, managing users, places, reviews, and amenities through a well-structured endpoint system.
+
+## 🌟 Summary
+HBNB is a full-stack Airbnb-like application that enables users to browse, book, and review places. It implements clean architecture principles, separates concerns between frontend and backend, and provides a seamless user experience through a RESTful API and dynamic frontend.
+```
