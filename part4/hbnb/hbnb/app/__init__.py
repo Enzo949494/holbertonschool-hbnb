@@ -1,4 +1,4 @@
-from flask import Flask, make_response, redirect
+from flask import Flask, make_response, redirect, request
 from flask_restx import Api
 from flask_cors import CORS
 from app.persistence.repository import SQLAlchemyRepository
@@ -34,31 +34,36 @@ def create_app(config_class="config.DevelopmentConfig"):
     with app.app_context():
         # Database tables will be created
         db.create_all()
-    
-    # Gestion CORS simplifiée avec after_request
-    @app.after_request
-    def after_request(response):
-        response.headers['Access-Control-Allow-Origin'] = 'http://localhost:8080'  # Changer selon votre frontend
-        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
-        response.headers['Access-Control-Allow-Credentials'] = 'true'
-        return response
 
-    # Gestionnaire OPTIONS spécifique pour éviter les problèmes de redirection
-    @app.route('/<path:path>', methods=['OPTIONS'])
-    @app.route('/', methods=['OPTIONS'])
-    def handle_options(path=''):
-        response = make_response()
-        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:8080')
-        response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
-        return response, 200
-        
     # Gérer la redirection problématique pour /api/v1/places
     @app.route('/api/v1/places', methods=['GET'])
     def places_without_slash():
         return redirect('/api/v1/places/', code=307)  # Redirection temporaire qui préserve la méthode
+
+    # Route spéciale pour gérer les reviews d'une place
+    @app.route('/api/v1/places/<place_id>/reviews', methods=['POST', 'OPTIONS'])
+    def place_reviews_endpoint(place_id):
+        if request.method == 'OPTIONS':
+            response = make_response()
+            response.headers.add('Access-Control-Allow-Origin', 'http://localhost:8080')
+            response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
+            response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+            response.headers.add('Access-Control-Allow-Credentials', 'true')
+            return response, 200
+        else:
+            # Rediriger vers le bon endpoint du namespace reviews
+            # Cette route sert principalement à gérer le CORS pour les requêtes POST
+            return redirect('/api/v1/reviews', code=307)  # Temporary redirect
+
+    # Route pour gérer les options des reviews
+    @app.route('/api/v1/reviews', methods=['OPTIONS'])
+    def reviews_options():
+        response = make_response()
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:8080')
+        response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response, 200
 
     # Initialize Flask-RESTX API
     api = Api(
@@ -85,5 +90,14 @@ def create_app(config_class="config.DevelopmentConfig"):
     api.add_namespace(reviews_ns, path='/api/v1/reviews')
     api.add_namespace(auth_ns, path='/api/v1/auth')
     api.add_namespace(protected_ns, path='/api/v1/protector')
+
+    # Configuration CORS globale
+    CORS(app, 
+         resources={r"/api/*": {
+             "origins": "http://localhost:8080",
+             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+             "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
+             "supports_credentials": True
+         }})
 
     return app

@@ -28,10 +28,23 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (token) {
         console.log('User is authenticated');
-        if (loginButton) loginButton.style.display = 'none';
+        
+        // MODIFICATION: Force le bouton login à être caché quand l'utilisateur est connecté
+        if (loginButton) {
+            loginButton.style.display = 'none';
+            // Utiliser !important pour s'assurer que le bouton reste caché
+            loginButton.setAttribute('style', 'display: none !important');
+        }
+        
         if (logoutButton) {
             logoutButton.style.display = 'block';
-            logoutButton.addEventListener('click', logout);
+            logoutButton.addEventListener('click', function(e) {
+                console.log('Logout button clicked!');
+                e.preventDefault(); // Important pour empêcher le comportement par défaut du lien
+                logout(e);
+            });
+            
+            console.log('Logout event listener attached');
         }
     } else {
         console.log('User is NOT authenticated');
@@ -54,7 +67,9 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 alert('Login failed: ' + error.message);
             }
+            
         });
+        
     }
 
     // Configurer le filtre de prix s'il existe
@@ -92,15 +107,18 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchPlaces(token); // CHANGÉ: appel direct à fetchPlaces au lieu de checkAuthentication
     }
 
-    // Ajoutez cette ligne à la fin de votre événement DOMContentLoaded
-    setTimeout(function() {
-        const loginButton = document.querySelector('.login-button') || document.getElementById('login-link');
-        if (loginButton) {
-            console.log('Forcing login button visibility');
-            loginButton.setAttribute('style', 'display: block !important; visibility: visible !important;');
-        }
-    }, 500); // 500ms après le chargement
-});
+   
+    
+    // AJOUTEZ CE BLOC ICI - Assurez-vous que tous les boutons logout fonctionnent
+    document.querySelectorAll('.logout-button').forEach(button => {
+        button.addEventListener('click', function(e) {
+            console.log('Logout button clicked via global handler');
+            e.preventDefault();
+            logout(e);
+        });
+    });
+    
+}); // <-- Ne pas oublier cette parenthèse fermante
 
 function getCookie(name) {
     const cookieValue = document.cookie
@@ -112,6 +130,8 @@ function getCookie(name) {
 
 function logout(event) {
     if (event) event.preventDefault();
+
+    console.log('Logout function called');
     
     // Supprimer le cookie de token
     document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
@@ -565,7 +585,11 @@ async function fetchPlaceDetails(token, placeId) {
  */
 async function fetchReviews(token, placeId) {
     try {
-        const apiUrl = `http://localhost:5000/api/v1/places/${placeId}/reviews`;
+        console.log('Fetching reviews for place ID:', placeId);
+        
+        // Assurez-vous que l'URL inclut bien le paramètre place_id
+        const apiUrl = `http://localhost:5000/api/v1/reviews?place_id=${placeId}`;
+        
         const headers = {
             'Content-Type': 'application/json'
         };
@@ -585,7 +609,18 @@ async function fetchReviews(token, placeId) {
         }
         
         const reviewsData = await response.json();
-        displayReviews(reviewsData);
+        console.log('Reviews received:', reviewsData);
+        
+        // Filtre supplémentaire côté client pour garantir que seules les reviews de cette place sont affichées
+        const filteredReviews = reviewsData.filter(review => {
+            const reviewPlaceId = review.place_id || '';
+            const matches = reviewPlaceId.toString() === placeId.toString();
+            console.log(`Review place_id: ${reviewPlaceId}, current placeId: ${placeId}, matches: ${matches}`);
+            return matches;
+        });
+        
+        console.log('Filtered reviews:', filteredReviews);
+        displayReviews(filteredReviews);
         
     } catch (error) {
         console.error("Error fetching reviews:", error);
@@ -667,10 +702,15 @@ function displayReviews(reviews) {
         // Format date
         const reviewDate = new Date(review.created_at).toLocaleDateString();
         
+        // Générer les étoiles en fonction du rating
+        const rating = review.rating || 0;
+        const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+        
         reviewCard.innerHTML = `
             <div class="review-header">
                 <span class="review-author">${review.user_name || 'Anonymous'}</span>
                 <span class="review-date">${reviewDate}</span>
+                <div class="review-rating">${stars} (${rating}/5)</div>
             </div>
             <div class="review-text">${review.text}</div>
         `;
@@ -695,6 +735,8 @@ function setupReviewForm(token, placeId) {
         event.preventDefault();
         
         const reviewText = document.getElementById('review-text').value;
+        // Récupérer la valeur du rating depuis le select
+        const rating = parseInt(document.getElementById('review-rating').value) || 5;
         
         if (!reviewText.trim()) {
             alert('Please enter a review');
@@ -702,7 +744,10 @@ function setupReviewForm(token, placeId) {
         }
         
         try {
-            const apiUrl = `http://localhost:5000/api/v1/places/${placeId}/reviews`;
+            const apiUrl = `http://localhost:5000/api/v1/reviews`;
+            
+            console.log('Submitting review to:', apiUrl);
+            
             const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
@@ -710,7 +755,9 @@ function setupReviewForm(token, placeId) {
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    text: reviewText
+                    text: reviewText,
+                    place_id: placeId,
+                    rating: rating
                 }),
                 mode: 'cors'
             });
@@ -745,13 +792,40 @@ function displayError(message) {
     }
 }
 
-// Ajout de window.onload pour une dernière vérification
+// Modifiez la fonction window.onload pour respecter l'état d'authentification
 window.onload = function() {
-    console.log("Window fully loaded, final check for login button");
-    const loginButton = document.querySelector('.login-button') || document.getElementById('login-link');
+    console.log("Window fully loaded, final check for buttons");
     
-    if (loginButton) {
-        console.log("Final attempt to force login button visibility");
-        loginButton.setAttribute('style', 'display: block !important; visibility: visible !important; opacity: 1 !important;');
+    const token = getCookie('token');
+    const loginButton = document.querySelector('.login-button') || document.getElementById('login-link');
+    const logoutButton = document.querySelector('.logout-button');
+    
+    if (token) {
+        // Utilisateur connecté - masquer login, afficher logout
+        if (loginButton) {
+            console.log("Authenticated: hiding login button");
+            loginButton.setAttribute('style', 'display: none !important');
+        }
+        if (logoutButton) {
+            console.log("Authenticated: showing logout button");
+            logoutButton.setAttribute('style', 'display: block !important');
+            
+            // S'assurer que le bouton logout fonctionne
+            logoutButton.addEventListener('click', function(e) {
+                console.log('Logout button clicked via window.onload handler');
+                e.preventDefault();
+                logout(e);
+            });
+        }
+    } else {
+        // Utilisateur non connecté - afficher login, masquer logout
+        if (loginButton) {
+            console.log("Not authenticated: showing login button");
+            loginButton.setAttribute('style', 'display: block !important; visibility: visible !important; opacity: 1 !important;');
+        }
+        if (logoutButton) {
+            console.log("Not authenticated: hiding logout button");
+            logoutButton.setAttribute('style', 'display: none !important');
+        }
     }
 };

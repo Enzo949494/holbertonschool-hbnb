@@ -153,3 +153,44 @@ class PlaceReviewList(Resource):
                      'user_id': review.user.id} for review in reviews], 200
         except ValueError as e:
             return {'error': str(e)}, 404
+            
+    @jwt_required()
+    @api.expect(review_model)
+    @api.response(201, 'Review successfully created')
+    @api.response(400, 'Invalid input data')
+    @api.response(403, "You cannot review your own place")
+    def post(self, place_id):
+        """Add a new review for a specific place"""
+        current_user_id = get_jwt_identity()
+        
+        # Créer un objet de données de revue avec l'ID de place déjà inclus
+        review_data = api.payload
+        review_data['place_id'] = place_id  # Utiliser l'ID de place de l'URL
+        
+        try:
+            # Validate that the user is not reviewing their own place
+            place = facade.get_place(place_id)
+            if not place:
+                return {'error': 'Place not found'}, 404
+                
+            if str(place.owner.id) == current_user_id:
+                return {'error': "You cannot review your own place"}, 403
+
+            # Validate that the user has not already reviewed this place
+            if facade.has_already_reviewed(current_user_id, place_id):
+                return {'error': "You have already reviewed this place"}, 400
+
+            # Add the user_id to the review data
+            review_data['user_id'] = current_user_id
+
+            # Create the review using the facade
+            new_review = facade.create_review(review_data)
+            return {
+                'id': new_review.id,
+                'text': new_review.text,
+                'rating': new_review.rating if hasattr(new_review, 'rating') else None,
+                'user_id': new_review.user.id,
+                'place_id': new_review.place.id
+            }, 201
+        except ValueError as e:
+            return {'error': str(e)}, 400
