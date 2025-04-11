@@ -16,96 +16,33 @@
         <nav>
             <ul>
                 <li><a href="index.html">Home</a></li>
-                <li><a href="login.html" class="login-button">Login</a></li>
+                <li><a href="login.html" class="login-button" id="login-link">Login</a></li>
             </ul>
         </nav>
     </header>
 
     <main>
-        <!-- Place details section -->
-        <section class="place-details">
-            <div class="place-header">
-                <h1>Cozy Beach House</h1>
-                <p class="location">Miami, Florida</p>
-            </div>
-            
-            <div class="place-gallery">
-                <img src="../images/place2.jpg" alt="Beach House" class="main-image">
-            </div>
-            
-            <div class="place-info">
-                <div class="host-info">
-                    <h3>Hosted by Sarah</h3>
-                    <img src="../images/host.jpg" alt="Host Sarah" class="host-image">
+        <!-- Place details section - Empty container to be filled dynamically -->
+        <section id="place-details">
+            <div class="loading-message">Loading place details...</div>
+        </section>
+        
+        <!-- Reviews section -->
+        <section id="reviews">
+            <h2>Reviews</h2>
+            <div class="loading-message">Loading reviews...</div>
+        </section>
+        
+        <!-- Add review section (will be shown/hidden based on authentication) -->
+        <section id="add-review">
+            <h2>Add a Review</h2>
+            <form id="review-form">
+                <div class="form-group">
+                    <label for="review-text">Your Review:</label>
+                    <textarea id="review-text" required></textarea>
                 </div>
-                
-                <div class="price-info">
-                    <h3>$250 per night</h3>
-                    <p>4 guests · 2 bedrooms · 2 bathrooms</p>
-                </div>
-                
-                <div class="description">
-                    <h3>About this place</h3>
-                    <p>
-                        Beautiful beachfront house with amazing ocean views. Perfect for a relaxing 
-                        getaway. The house features a fully equipped kitchen, spacious living area, 
-                        and direct access to the beach. Enjoy stunning sunsets from the private deck.
-                    </p>
-                </div>
-                
-                <div class="amenities">
-                    <h3>Amenities</h3>
-                    <ul>
-                        <li>Wi-Fi</li>
-                        <li>Fully equipped kitchen</li>
-                        <li>Beach access</li>
-                        <li>Free parking</li>
-                        <li>Air conditioning</li>
-                    </ul>
-                </div>
-            </div>
-            
-            <!-- Reviews section -->
-            <div class="reviews-section">
-                <div class="reviews-header">
-                    <h2>Reviews</h2>
-                    <a href="add_review.html" class="add-review-btn">Add Review</a>
-                </div>
-                
-                <div class="reviews-container">
-                    <!-- Review 1 -->
-                    <article class="review-card">
-                        <div class="review-header">
-                            <img src="../images/user1.jpg" alt="John D." class="user-image">
-                            <div class="review-meta">
-                                <h3>John D.</h3>
-                                <div class="rating">★★★★★</div>
-                                <p class="review-date">April 2025</p>
-                            </div>
-                        </div>
-                        <p class="review-text">
-                            Amazing place with stunning views! The house was clean and 
-                            had everything we needed. The beach access was perfect.
-                        </p>
-                    </article>
-                    
-                    <!-- Review 2 -->
-                    <article class="review-card">
-                        <div class="review-header">
-                            <img src="../images/user2.jpg" alt="Emily W." class="user-image">
-                            <div class="review-meta">
-                                <h3>Emily W.</h3>
-                                <div class="rating">★★★★☆</div>
-                                <p class="review-date">March 2025</p>
-                            </div>
-                        </div>
-                        <p class="review-text">
-                            We had a great stay here! The location is perfect and the house 
-                            is beautiful. The only small issue was that the WiFi was a bit slow.
-                        </p>
-                    </article>
-                </div>
-            </div>
+                <button type="submit" class="btn primary-btn">Submit Review</button>
+            </form>
         </section>
     </main>
 
@@ -113,5 +50,7 @@
     <footer>
         <p>&copy; 2025 HBNB - All rights reserved</p>
     </footer>
+    
+    <script src="../scripts/scripts.js"></script>
 </body>
 </html>
